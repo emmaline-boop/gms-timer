@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GMS Timer</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 50px;
+      background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABYAAAAWgCAYAAABrK0hTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAgAElEQVR4nOzdd5QcR5bH8e0uJ3hxOVyIYjd9FJhskJGwI9ApFtJFiZa9cQSGQsSNbGxJ0Sy2yZdl7LnZVzzWrc3M3Z7Xm6v3/93emnnvXJz3s95/X6+5zd++55zrf//HfQBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAf0+98/gBAF+RtYtHxDQfKpQAAAAASUVORK5CYII=') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+    }
+    #timer {
+      font-size: 80px;
+      margin-top: 20px;
+      color: #fff;
+    }
+    input, button {
+      font-size: 20px;
+      padding: 10px;
+      margin: 10px;
+    }
+    button {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>GMS Timer</h1>
+  <input type="number" id="totalMinutes" placeholder="Total Meeting Minutes" min="1">
+  <input type="number" id="numPresenters" placeholder="Number of Presenters" min="1">
+  <button onclick="calculateAndStart()">Start Timer</button>
+  <button onclick="resetTimer()">Reset</button>
+  <div id="info"></div>
+  <div id="timer">00:00</div>
+  <audio id="softChime" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" preload="auto"></audio>
+  <audio id="loudChime" src="https://www.soundjay.com/button/sounds/beep-09.mp3" preload="auto"></audio>
+
+  <script>
+    let countdown;
+    let presenterMinutes = 0;
+
+    function calculateAndStart() {
+      clearInterval(countdown);
+      const total = parseInt(document.getElementById("totalMinutes").value);
+      const presenters = parseInt(document.getElementById("numPresenters").value);
+
+      if (isNaN(total) || isNaN(presenters) || total < 1 || presenters < 1) return;
+
+      presenterMinutes = Math.floor((total * 60) / presenters);
+      document.getElementById("info").textContent = `Each presenter gets ${Math.floor(presenterMinutes / 60)}m ${presenterMinutes % 60}s.`;
+
+      startTimer(presenterMinutes);
+    }
+
+    function startTimer(seconds) {
+      clearInterval(countdown);
+      const endTime = Date.now() + seconds * 1000;
+      const softChime = document.getElementById("softChime");
+      const loudChime = document.getElementById("loudChime");
+      let softChimePlayed = false;
+      let timerEnded = false;
+
+      countdown = setInterval(() => {
+        const remaining = endTime - Date.now();
+        const mins = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+        const secs = Math.floor((remaining % (1000 * 60)) / 1000);
+
+        if (remaining > 0) {
+          document.getElementById("timer").textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        } else if (!timerEnded) {
+          clearInterval(countdown);
+          document.getElementById("timer").textContent = "00:00";
+          loudChime.currentTime = 0;
+          loudChime.play();
+          timerEnded = true;
+        }
+
+        if (remaining <= 60000 && !softChimePlayed && remaining > 0) {
+          softChime.currentTime = 0;
+          softChime.play();
+          softChimePlayed = true;
+        }
+      }, 250);
+    }
+
+    function resetTimer() {
+      clearInterval(countdown);
+      document.getElementById("timer").textContent = "00:00";
+      document.getElementById("info").textContent = "";
+      document.getElementById("totalMinutes").value = "";
+      document.getElementById("numPresenters").value = "";
+    }
+  </script>
+</body>
+</html>
